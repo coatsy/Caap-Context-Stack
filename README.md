@@ -1,2 +1,3 @@
 # Caap-Context-Stack
-Context stack class for Conversations
+## Context stack class for Conversations
+One of the key differentiators of a conversational UI is its ability to respond differently to the same instruction based on the context of the rest of the conversation. For example "what do I have on my todo list today?" will result in a list of items. Then "show me the details for number 4" will display the fourth item in the list. "Mark that as complete" will change item 4's status. "Re-assign item 6 to Janice" will walk back up the context stack until it finds an appropriate list of tasks and sets uses that list to re-assign the applicable task.

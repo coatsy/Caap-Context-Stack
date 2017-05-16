@@ -1,0 +1,26 @@
+{
+  "name": "contextbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coatsy/Caap-Context-Stack.git"
+  },
+  "author": "@coatsy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/coatsy/Caap-Context-Stack/issues"
+  },
+  "homepage": "https://github.com/coatsy/Caap-Context-Stack#readme",
+  "dependencies": {
+    "botbuilder": "^3.8.2",
+    "botbuilder-azure": "^3.0.2",
+    "dotenv-extended": "^2.0.0",
+    "restify": "^4.3.0"
+  }
+}

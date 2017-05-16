@@ -2,6 +2,7 @@
    "contextStack": 
     [
         {
+            "queryTime": "2017-05-16T20:03:15.543Z",
             "queryString" : "What are the best segments near here?",
             "responseType" : "array",
             "entityType": "segment",
@@ -15,40 +16,46 @@
             ]
         },
         {
+            "queryTime": "2017-05-16T20:03:27.876Z",
             "queryString" : "What's the best time on segment 4?",
             "responseType" : "scalar",
             "entityType" : "time",
             "responseData" : "05:07.3"
         },
         {
+            "queryTime": "2017-05-16T20:03:59.012Z",
             "queryString" : "What's my position on segment 2?",
             "responseType" : "scalar",
             "entityType": "position",
             "responseData" : 2
         },
         {
+            "queryTime": "2017-05-16T20:08:43.098Z",
             "queryString" : "What is the nearest segment that I haven't completed?",
             "responseType" : "scalar",
             "entityType" : "segment",
             "responseData" : "c94984b9-0261-4cdc-9e95-7b1bf7482ab0"
         },
         {
+            "queryTime": "2017-05-16T20:12:02.373Z",
             "queryString" : "How many of my friends have run segment 1?",
             "responseType" : "scalar",
             "entityType" : "count",
             "responseData" : 4
         },
         {
+            "queryTime": "2017-05-16T20:12:55.224Z",
             "queryString" : "Who are they, and what are their times?",
             "responseType" : "vector",
             "entityType" : "composite",
             "compositeComponentEntityTypes": ["person", "time"],
-            "responseData" : [
-                ["fdf13948-37ab-43f6-b336-27cddb00dc5c", "08:14.6" ],
-                ["c4524afb-9576-4885-9c54-b4e64eb4f98c", "08:18.0" ],
-                ["9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd", "08:32.3" ],
-                ["1f2f002c-ea40-402f-abbc-a21cea5d89e4", "09:17.5" ]
-            ]
+            "responseData" : {"segment": "c94984b9-0261-4cdc-9e95-7b1bf7482ab0",
+                "userTimes": [
+                    ["fdf13948-37ab-43f6-b336-27cddb00dc5c", "08:14.6" ],
+                    ["c4524afb-9576-4885-9c54-b4e64eb4f98c", "08:18.0" ],
+                    ["9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd", "08:32.3" ],
+                    ["1f2f002c-ea40-402f-abbc-a21cea5d89e4", "09:17.5" ]
+                ]}
         }
     ]
 }

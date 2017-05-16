@@ -80,9 +80,32 @@ function getFormattedAddressFromPlace(place, separator) {
 function handleSuccessResponse(session, payload) {
     if ((payload)&&(payload.segments)&&(payload.segments.length>0)) {
         console.log(payload);
-        session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
-        session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
-    }
+        //session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
+        //session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
+       
+        var startpoint = [place.geo.latitude,place.geo.longitude];
+
+        var waypoints = [];
+        waypoints.push(payload.segments[0].start_latlng);
+        waypoints.push(payload.segments[0].end_latlng);
+
+        var locationUrl = bingAPI.getRouteImage(startpoint, startpoint, waypoints);
+        var bingUrl = bingAPI.getBingSiteRouteUrl(startpoint, startpoint, waypoints);
+
+        var msg = new builder.Message(session);
+        msg.attachmentLayout(builder.AttachmentLayout.carousel)
+        msg.attachments([
+            new builder.HeroCard(session)
+                .title("Suggested Route")
+                .subtitle("Here's there route you requested")
+                .text(payload.segments[0].name)
+                .images([builder.CardImage.create(session, locationUrl)])
+                .buttons([
+                    builder.CardAction.openUrl(session, bingUrl, 'Open Bing maps')
+                ])]);
+
+        session.send(msg);
+     }
     else {
         session.send('Couldn\'t find any segments near here');
     }

@@ -5,7 +5,7 @@ exports.getRouteImage = function (start, end, waypointArray) {
 
         var widthMargin = 0.01;
         var heightMargin = 0.01;
-         var mapKey = process.env.BING_API_KEY;
+         var mapKey = process.env.BING_MAPS_API_KEY;
         var top = (start[0] > end[0] ? start[0] : end[0]) + heightMargin;
         var left = start[1] < end[1] ? start[1] : end[1] - widthMargin;
         var bottom = start[0] < end[0] ? start[0] : end[0] - heightMargin;
@@ -49,7 +49,7 @@ exports.getBingSiteRouteUrl = function(start, end, waypointArray) {
 
 /// Get Route information via the Bing REST API
 exports.getRoute = function (start, end, waypointArray) {
-         var mapKey = process.env.BING_API_KEY;
+         var mapKey = process.env.BING_MAPS_API_KEY;
         var widthMargin = 0.01;
         var heightMargin = 0.01;
 

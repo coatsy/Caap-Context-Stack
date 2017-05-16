@@ -1,0 +1,54 @@
+{
+   "contextStack": 
+    [
+        {
+            "queryString" : "What are the best segments near here?",
+            "responseType" : "array",
+            "entityType": "segment",
+            "responseData" : [
+                "1ff17012-eff3-4240-b040-906d94f44890",
+                "cd37d094-c68b-4491-a440-bd64b96df599",
+                "4bfa146d-6c9d-428e-8830-da5a2f29f278",
+                "9a1fd2b0-0cd6-41aa-b556-90239d03a1af",
+                "c94984b9-0261-4cdc-9e95-7b1bf7482ab0",
+                "1159d7cc-2483-48c4-bc16-b73eb92f591b"
+            ]
+        },
+        {
+            "queryString" : "What's the best time on segment 4?",
+            "responseType" : "scalar",
+            "entityType" : "time",
+            "responseData" : "05:07.3"
+        },
+        {
+            "queryString" : "What's my position on segment 2?",
+            "responseType" : "scalar",
+            "entityType": "position",
+            "responseData" : 2
+        },
+        {
+            "queryString" : "What is the nearest segment that I haven't completed?",
+            "responseType" : "scalar",
+            "entityType" : "segment",
+            "responseData" : "c94984b9-0261-4cdc-9e95-7b1bf7482ab0"
+        },
+        {
+            "queryString" : "How many of my friends have run segment 1?",
+            "responseType" : "scalar",
+            "entityType" : "count",
+            "responseData" : 4
+        },
+        {
+            "queryString" : "Who are they, and what are their times?",
+            "responseType" : "vector",
+            "entityType" : "composite",
+            "compositeComponentEntityTypes": ["person", "time"],
+            "responseData" : [
+                ["fdf13948-37ab-43f6-b336-27cddb00dc5c", "08:14.6" ],
+                ["c4524afb-9576-4885-9c54-b4e64eb4f98c", "08:18.0" ],
+                ["9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd", "08:32.3" ],
+                ["1f2f002c-ea40-402f-abbc-a21cea5d89e4", "09:17.5" ]
+            ]
+        }
+    ]
+}

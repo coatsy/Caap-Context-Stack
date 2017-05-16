@@ -72,3 +72,33 @@ exports.getRoute = function (start, end, waypointArray) {
         return locationUrl;
     }
 
+exports.SampleCreateCard = function (session) {
+
+        var segment1 = strava.segments.get({ id: '7575368' }, (err, results) => {
+        var climbing = results.elevation_high - results.elevation_low;
+        var endlatlong = results.end_latlng;
+        var startlatlong = results.start_latlng;
+        var startpoint = [47.588359, -122.395571];
+        var endpoint = [47.588359, -122.395571];
+        var waypoints = [];
+        waypoints.push(results.start_latlng);
+        waypoints.push(results.end_latlng);
+
+        var locationUrl = bingAPI.getRouteImage(startpoint, endpoint, waypoints);
+        var bingUrl = bingAPI.getBingSiteRouteUrl(startpoint, endpoint, waypoints);
+
+        var msg = new builder.Message(session);
+        msg.attachmentLayout(builder.AttachmentLayout.carousel)
+        msg.attachments([
+            new builder.HeroCard(session)
+                .title("Suggested Route")
+                .subtitle("Here's there route you requested")
+                .text("Hilly route")
+                .images([builder.CardImage.create(session, locationUrl)])
+                .buttons([
+                    builder.CardAction.openUrl(session, bingUrl, 'Open Bing maps')
+                ])]);
+
+        return msg;
+     });
+}

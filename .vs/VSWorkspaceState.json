@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\stravabot",
+    "\\stravabot\\data"
   ],
-  "SelectedNode": "\\LICENSE",
+  "SelectedNode": "\\stravabot\\app.js",
   "PreviewInSolutionExplorer": false
 }

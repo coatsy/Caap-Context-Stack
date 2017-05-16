@@ -5,6 +5,7 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var locationDialog = require('botbuilder-location');
 var strava = require('strava-v3');
+var bingAPI = require('./Common/bingAPI.js');
 
 // Setup Restify Server
 var server = restify.createServer();

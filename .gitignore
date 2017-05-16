@@ -57,3 +57,5 @@ typings/
 # dotenv environment variables file
 .env
 
+# strava-v3 config
+stravabot/data/strava_config

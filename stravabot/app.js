@@ -49,9 +49,9 @@ bot.dialog("/", [
             var boxSize = 0.02;
             var activityType = 'running';  //‘running’ or ‘riding’, default is riding
             var minCategoryClimb = '1'; // segment hills are rated from 0 to 5 depending on how steep they are
-            var maxCategoiryClimb = '5';
+            var maxCategoryClimb = '5';
             var boundsStr = (parseFloat(place.geo.latitude)-boxSize)+','+(parseFloat(place.geo.longitude)-boxSize)+','+(parseFloat(place.geo.latitude)+boxSize)+','+(parseFloat(place.geo.longitude)+boxSize);
-            strava.segments.explore({'bounds':boundsStr},function(err,payload,limits) {
+            strava.segments.explore({'bounds':boundsStr, 'activity_type':activityType, 'min_cat':minCategoryClimb, 'max_cat':maxCategoryClimb},function(err,payload,limits) {
                 if(!err) {
                     console.log(payload);
                     handleSuccessResponse(session, payload);

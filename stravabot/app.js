@@ -19,6 +19,7 @@ var connector = new builder.ChatConnector({
 });
 
 var bot = new builder.UniversalBot(connector);
+var place;
 
 // Listen for messages from users 
 server.post('/api/messages', connector.listen());
@@ -45,7 +46,7 @@ bot.dialog("/", [
     },
     function (session, results) {
         if (results.response) {
-            var place = results.response;
+            place = results.response;
             var boxSize = 0.02;
             var activityType = 'running';  //‘running’ or ‘riding’, default is riding
             var minCategoryClimb = '1'; // segment hills are rated from 0 to 5 depending on how steep they are
@@ -78,7 +79,8 @@ function getFormattedAddressFromPlace(place, separator) {
 function handleSuccessResponse(session, payload) {
     if ((payload)&&(payload.segments)&&(payload.segments.length>0)) {
         console.log(payload);
-        session.send(payload.segments[0].name);
+        session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
+        session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
     }
     else {
         session.send('Couldn\'t find any segments near here');

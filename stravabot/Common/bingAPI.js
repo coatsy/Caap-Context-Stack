@@ -34,13 +34,13 @@ exports.getBingSiteRouteUrl = function(start, end, waypointArray) {
 
         var pointCount = 1;
         var locationUrl = 'http://bing.com/maps/default.aspx'; 
-        var rtp = 'rtp="pos.' + start[0] + '_' + start[1] + '"';
+        var rtp = 'rtp=pos.' + start[0] + '_' + start[1] + '';
 
         for (var i in waypointArray)
         {    
-            rtp +='~pos."' + waypointArray[i][0] + '_' + waypointArray[i][1] + '"';
+            rtp +='~pos.' + waypointArray[i][0] + '_' + waypointArray[i][1] + '';
         }
-        rtp += '~pos."' + end[0] + '_' + end[1];
+        rtp += '~pos.' + end[0] + '_' + end[1];
         locationUrl += '?' + rtp;
         locationUrl += '&mode=W';
         return locationUrl;

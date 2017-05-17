@@ -3,6 +3,7 @@ require('dotenv-extended').load();
 
 var restify = require('restify');
 var builder = require('botbuilder');
+var azure = require('azure-storage');
 
 
 // Setup Restify Server
@@ -23,31 +24,60 @@ server.post('/api/messages', connector.listen());
 var bot = new builder.UniversalBot(connector);
 
 // root dialog
-bot.dialog('/', function (session, args) {
-
-    // notifications will have the activity type 'event'
-    if (session.message.type === 'event')
-    {
-
-    } 
-
+bot.dialog('/', function (session, args) { 
 
     // if the user types 'subscribe' then they wish to be notified when new leaders occur for segments they are interested in
     if (session.message.text === "subscribe") {
-        savedAddress = session.message.address;
-        session.send("Hey! You have now subscribed to Segment Leader Board Notifications");
+        session.beginDialog('/confirmStravaDetails');
     }
 });
 
 // handle the proactive initiated dialog
-bot.dialog('/newLeader', function (session, args, next) {
-    var segmentName = "Durban Category 4";
+bot.dialog('/confirmStravaDetails', [function (session) {
+    builder.Prompts.text(session, "What is your Strava name?");
+},
+function (session, results) {
+    session.dialogData.name = results.response;
+    builder.Prompts.text(session, "What is your Strava Group name?");
+},
+function (session, results) {
 
-    if (session.message.text === "done") {
-        session.send("I hope you are not too disappointed!!");
-        session.endDialog();
-    } else {
-        session.send('Hello. Just to let you know, there is new leader for the segment %s. Type "done" to resume', segmentName);
-    }
-});
+    session.dialogData.group = results.response;
+
+    var savedMessage = session.message;
+
+    var tableSvc = azure.createTableService(process.env.AZURE_STORAGE_CONNECTION);
+
+    tableSvc.createTableIfNotExists('stravapeople', function(error, result, response){
+        if(!error){
+            // Table exists or created
+
+        } else {
+            session.send(error.message);
+        }
+    });
+
+    var entGen = azure.TableUtilities.entityGenerator;
+    var task = {
+        PartitionKey: entGen.String('stravaSubscribers'),
+        RowKey: entGen.String(savedMessage.address.conversation.id),
+        ConversationId: entGen.String(savedMessage.address.conversation.id),
+        UserId: entGen.String(savedMessage.address.user.id),
+        BotId: entGen.String(savedMessage.address.bot.id),
+        BotName: entGen.String(savedMessage.address.bot.name),
+        MessageId: entGen.String(savedMessage.address.id),
+        ChannelId: entGen.String(savedMessage.address.channelId),
+        ServiceUrl: entGen.String(savedMessage.address.serviceUrl),
+        StravaName: entGen.String(session.dialogData.name),
+        StravaGroup: entGen.String(session.dialogData.group)
+    };
+
+    tableSvc.insertOrReplaceEntity('stravapeople',task, function (error, result, response) {
+        if(!error){
+            // Entity inserted
+        }
+    });
+
+    session.endDialog('Congratulations you have now subscribed to Strava notifications!')
+}]);
 

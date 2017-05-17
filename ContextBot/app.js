@@ -84,6 +84,57 @@ bot.dialog('stravaQuery', function(session, args, next){
     session.endDialog();
 });
 
+var CityLabels = {
+    Sydney: 'Sydney',
+    Seattle: 'Seattle',
+    Auckland: 'Auckland'
+};
+var CityLocations = {
+    Sydney: {lat: -33.8696, lon: 151.207},
+    Seattle: {lat: 47.60357, lon: -122.3295},
+    Auckland: {lat:-36.84732, lon: 174.7628} 
+};
+
+bot.dialog('location', new builder.UniversalBot(connector, [function(session){
+    builder.Prompts.choice(
+            session,
+            'Where are you?',
+            [CityLabels.Auckland, CityLabels.Seattle, CityLabels.Sydney],
+            {
+                maxRetries: 3,
+                retryPrompt: 'Not a valid option'
+            });
+},function(session, result){
+    if (!result.response) {
+        // exhausted attemps and no selection, start over
+        session.send('Ooops! Too many attemps :( But don\'t worry, I\'m handling that exception and you can try again!');
+        return session.endDialog();
+    }
+
+    // on error, start over
+    session.on('error', function (err) {
+        session.send('Failed with message: %s', err.message);
+        session.endDialog();
+    });
+
+    // continue on proper dialog
+    var selection = result.response.entity;
+    switch (selection) {
+        case CityLabels.Auckland:
+            session.userData[locationKey] = CityLocations.Auckland;
+            break;
+        case CityLabels.Seattle:
+            session.userData[locationKey] = CityLocations.Seattle;
+            break;
+        case CityLabels.Sydney:
+            session.userData[locationKey] = CityLocations.Sydney;
+            break;
+    }
+
+    session.send('Set your location to %s', selection);
+
+}]));
+
 function executeQuery(query, context){
     // query analysis happens here - LUIS or whatever else
 

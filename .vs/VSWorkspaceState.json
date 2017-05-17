@@ -2,6 +2,7 @@
   "ExpandedNodes": [
     "",
     "\\stravabot",
+    "\\stravabot\\Common",
     "\\stravabot\\data"
   ],
   "SelectedNode": "\\stravabot\\app.js",

@@ -6,13 +6,20 @@ var builder = require('botbuilder');
 var locationDialog = require('botbuilder-location');
 var strava = require('strava-v3');
 var bingAPI = require('./Common/bingAPI.js');
-var polyline = require( 'google-polyline' )
+var polyline = require( 'google-polyline' );
+var cardlib = require('microsoft-adaptivecards');
+var adaptivecard = require('./Common/adaptivecards.js');
 
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
    console.log('%s listening to %s', server.name, server.url); 
 });
+
+server.get(/\/public\/?.*/, restify.serveStatic({
+   'directory': __dirname,
+   'default': 'api_logo_pwrdBy_strava_horiz_light.png'
+}));
 
 // Create chat connector for communicating with the Bot Framework Service
 var connector = new builder.ChatConnector({
@@ -89,6 +96,7 @@ function handleSuccessResponse(session, payload) {
 
         // only get 1 for now
         var showlimit = payload.segments.length<=3 ? payload.segments.length : 3;
+        adaptivecard.clearSegments();
         for (var i=0; i < showlimit; i++) {
 
             var points = polyline.decode(payload.segments[i].points);
@@ -103,20 +111,17 @@ function handleSuccessResponse(session, payload) {
 
             var locationUrl = bingAPI.getRouteImage(startpoint, startpoint, waypoints);
             var bingUrl = bingAPI.getBingSiteRouteUrl(startpoint, startpoint, waypoints);
-            cards.push(new builder.HeroCard(session)
-                .title("Suggested Route")
-                .subtitle("Here's there route you requested")
-                .text(payload.segments[0].name)
-                .images([builder.CardImage.create(session, locationUrl)])
-                .buttons([
-                    builder.CardAction.openUrl(session, bingUrl, 'Open Bing maps')
-                ]));
+
+           adaptivecard.addSegment(locationUrl, bingUrl, (i+1) + ". " + payload.segments[i].name);
+
+           
         }
-
+        var cardtemplate = adaptivecard.get();
         var msg = new builder.Message(session);
-        msg.attachmentLayout(builder.AttachmentLayout.carousel)
-
-        msg.attachments(cards);
+        msg.addAttachment({
+            'contentType': 'application/vnd.microsoft.card.adaptive',
+            'content': cardtemplate
+        });
 
         session.send(msg);
      }

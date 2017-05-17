@@ -1,5 +1,5 @@
 {
-  "name": "addressbot",
+  "name": "proactivebot",
   "version": "1.0.0",
   "description": "Bot built with node",
   "main": "app.js",

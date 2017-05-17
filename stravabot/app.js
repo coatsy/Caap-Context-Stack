@@ -6,6 +6,7 @@ var builder = require('botbuilder');
 var locationDialog = require('botbuilder-location');
 var strava = require('strava-v3');
 var bingAPI = require('./Common/bingAPI.js');
+var polyline = require( 'google-polyline' )
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -20,6 +21,7 @@ var connector = new builder.ChatConnector({
 });
 
 var bot = new builder.UniversalBot(connector);
+var place;
 
 // Listen for messages from users 
 server.post('/api/messages', connector.listen());
@@ -46,8 +48,8 @@ bot.dialog("/", [
     },
     function (session, results) {
         if (results.response) {
-            var place = results.response;
-            var boxSize = 0.02;
+            place = results.response;
+            var boxSize = 0.1;
             var activityType = 'running';  //‘running’ or ‘riding’, default is riding
             var minCategoryClimb = '1'; // segment hills are rated from 0 to 5 depending on how steep they are
             var maxCategoryClimb = '5';
@@ -79,8 +81,45 @@ function getFormattedAddressFromPlace(place, separator) {
 function handleSuccessResponse(session, payload) {
     if ((payload)&&(payload.segments)&&(payload.segments.length>0)) {
         console.log(payload);
-        session.send(payload.segments[0].name);
-    }
+        //session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
+        //session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
+       
+        var startpoint = [place.geo.latitude,place.geo.longitude];
+        var cards = [];
+
+        // only get 1 for now
+        var showlimit = payload.segments.length<=3 ? payload.segments.length : 3;
+        for (var i=0; i < showlimit; i++) {
+
+            var points = polyline.decode(payload.segments[i].points);
+            var waypoints = [];
+            waypoints.push(payload.segments[i].start_latlng);
+            for (var j=0; j < points.length; j += 10) {
+                waypoints.push(points[j]);
+            }
+            
+            waypoints.push(payload.segments[i].end_latlng);
+
+
+            var locationUrl = bingAPI.getRouteImage(startpoint, startpoint, waypoints);
+            var bingUrl = bingAPI.getBingSiteRouteUrl(startpoint, startpoint, waypoints);
+            cards.push(new builder.HeroCard(session)
+                .title("Suggested Route")
+                .subtitle("Here's there route you requested")
+                .text(payload.segments[0].name)
+                .images([builder.CardImage.create(session, locationUrl)])
+                .buttons([
+                    builder.CardAction.openUrl(session, bingUrl, 'Open Bing maps')
+                ]));
+        }
+
+        var msg = new builder.Message(session);
+        msg.attachmentLayout(builder.AttachmentLayout.carousel)
+
+        msg.attachments(cards);
+
+        session.send(msg);
+     }
     else {
         session.send('Couldn\'t find any segments near here');
     }

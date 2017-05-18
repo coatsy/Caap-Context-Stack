@@ -23,7 +23,6 @@ server.post('/api/messages', connector.listen());
 
 var lat;
 var lon;
-var venueName;
 
 var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL);
 var bot = new builder.UniversalBot(connector);
@@ -104,15 +103,21 @@ function (session, results) {
             // Entity inserted
         }
     });
-
-    session.endDialog('Congratulations you have now subscribed to Strava notifications!')
+    session.send('Congratulations you have now subscribed to Strava notifications!');
 }])
 .triggerAction({
-    matches: 'subscribe'
+    matches: 'subscribe',
+    intentThreshold: 0.6
 });
 
 bot.dialog('/findRun', [
     function (session, args, next) {
+
+        // reset the lon and lat before each request
+        // todo: give the user the opportunity change or keep their current location
+        session.userData["lat"] = null;
+        session.userData["lon"] = null;
+
         if (session.message && session.message.entities) {
             var userInfo = session.message.entities.find((e) => {
                     return e.type === 'UserInfo';
@@ -124,26 +129,32 @@ bot.dialog('/findRun', [
                     if (currentLocation)
                     {
                         //Access the latitude and longitude values of the users location.
-                        lat = currentLocation.Hub.Latitude;
-                        lon = currentLocation.Hub.Longitude;
-                        venueName = currentLocation.Hub.Name;    
+                        session.userData["lat"] = currentLocation.Hub.Latitude;
+                        session.userData["lon"] = currentLocation.Hub.Longitude;
                     }
                 }
         };
 
-        if (!lat && !lon) {
+        if (!session.userData["lat"] && !session.userData["lon"]) {
             session.replaceDialog('/findLocation');
         } else {
-            session.endDialog('Thanks, I will find routes based on your current address %s %s', lat, lon)
+            session.endDialog('Thanks, I will find routes based on your current address %s %s', session.userData["lat"], session.userData["lon"])
         }
     }
 ])
 .triggerAction({
-    matches: 'findRun'
+    matches: 'findRun',
+    intentThreshold: 0.6
 });
 
 bot.dialog('/findBike', [
     function (session, args, next) {
+
+        // reset the lon and lat before each request
+        // todo: give the user the opportunity change or keep their current location
+        session.userData["lat"] = null;
+        session.userData["lon"] = null;
+
         if (session.message && session.message.entities) {
             var userInfo = session.message.entities.find((e) => {
                     return e.type === 'UserInfo';
@@ -155,22 +166,22 @@ bot.dialog('/findBike', [
                     if (currentLocation)
                     {
                         //Access the latitude and longitude values of the users location.
-                        lat = currentLocation.Hub.Latitude;
-                        lon = currentLocation.Hub.Longitude;
-                        venueName = currentLocation.Hub.Name;    
+                        session.userData["lat"] = currentLocation.Hub.Latitude;
+                        session.userData["lon"] = currentLocation.Hub.Longitude;    
                     }
                 }
         };
 
-        if (!lat && !lon) {
+        if (!session.userData["lat"] && !session.userData["lon"]) {
             session.replaceDialog('/findLocation');
         } else {
-            session.endDialog('Thanks, I will find routes based on your current address %s %s', lat, lon)
+            session.endDialog('Thanks, I will find routes based on your current address %s %s', session.userData["lat"], session.userData["lon"])
         }
     }
 ])
 .triggerAction({
-    matches: 'findBike'
+    matches: 'findBike',
+    intentThreshold: 0.6
 });
 
 // Main request address dialog, invokes BotBuilder-Location
@@ -196,7 +207,11 @@ bot.dialog('/findLocation', [
     function (session, results) {
         if (results.response) {
             var place = results.response;
-			session.endDialog('Thanks, I will find routes based on this address %s %s', place.geo.latitude, place.geo.longitude)
+            session.userData["lon"] = place.geo.longitude;
+            session.userData["lat"] = place.geo.latitude;
+
+            session.send('Thanks, I will find routes based on your current address %s %s', session.userData["lat"], session.userData["lon"]);
+            session.endDialog();
         }
     }
 ]);

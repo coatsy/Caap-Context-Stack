@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "azure-storage": "^2.1.0",
     "botbuilder": "^3.8.2",
     "botbuilder-location": "^2.0.0",
     "dotenv-extended": "^2.0.0",

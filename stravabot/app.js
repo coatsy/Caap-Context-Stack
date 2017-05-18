@@ -42,22 +42,28 @@ server.post('/api/messages', connector.listen());
 
 bot.library(locationDialog.createLibrary(process.env.BING_MAPS_API_KEY));
 
-bot.dialog('/', [
+bot.dialog('/findroute', [
     function (session, args, next) {
-        var minDistance, minDistance, maxDistance, activityType, activityCategory, difficulty;
+        var minDistance, minDistance, maxDistance, activityType, activityCategory, difficulty, distance;
         minDistance = builder.EntityRecognizer.findEntity(args.intent.entities, 'Distance.MinDistance'); // min max
         maxDistance = builder.EntityRecognizer.findEntity(args.intent.entities, 'Distance.MaxDistance'); // min max
-        activityType = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActivityType'); // Run or Bike
-        activityCategory = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActivityCategory'); // Hills or Flat
-        difficulty = builder.EntityRecognizer.findEntity(args.intent.entities, 'Difficulty');
-
+        distance = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.dimension'); // min max
+        activityType = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActvityType'); // Run or Bike
+        difficulty = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActivityCategory'); // Hills or Flat
+        //difficulty = builder.EntityRecognizer.findEntity(args.intent.entities, 'Difficulty');
+        var unit = null;
         if (minDistance == undefined | !minDistance) {
             minDistance = 0 // KM
         } else {
             minDistance = minDistance.entity;
         }
         if (maxDistance == undefined | !maxDistance) {
-            maxDistance = 10 // KM
+            if (distance == undefined | !distance) {
+                maxDistance = 10 // KM
+            } else {
+                maxDistance = distance.resolution.value;
+                unit = distance.resolution.unit;
+            }
         } else {
             maxDistance = maxDistance.entity;
         }
@@ -69,8 +75,8 @@ bot.dialog('/', [
                     case 'run':
                         activityType = 'running';
                         break;
-                    case 'bike':
-                        activityType = 'biking';
+                    case 'ride':
+                        activityType = 'riding';
                         break;
                     default:
                         activityType = 'running';
@@ -112,11 +118,12 @@ bot.dialog('/', [
             'activityCategory': activityCategory,
             'difficulty': difficulty,
             'minCategoryClimb': minCategoryClimb,
-            'maxCategoryClimb': maxCategoryClimb
+            'maxCategoryClimb': maxCategoryClimb,
+            'unit': unit
         }
          session.send(`Just a sec. I'll look for a ${activityType} based on your critieria`);
 
-            var place = session.conversationData.place;
+            var place = session.userData.place;
         if (!place) 
         {
             session.beginDialog('/getlocation');
@@ -126,10 +133,10 @@ bot.dialog('/', [
         }
     },
     function (session, results) {
-        var place = session.conversationData.place;
+        var place = session.userData.place;
         if (!place) {
              place = results.response;
-             session.conversationData.place = place;
+             session.userData.place = place;
         };
         let activityType = session.dialogData.query.activityType;
         let maxDistance = session.dialogData.query.maxDistance;
@@ -137,7 +144,7 @@ bot.dialog('/', [
         let maxCategoryClimb = session.dialogData.query.maxCategoryClimb;
                 // Calc bounding box
         let center = new GeoPoint(parseFloat(place.geo.latitude), parseFloat(place.geo.longitude), false);
-        let boundingBox = center.boundingCoordinates(maxDistance, null, false);
+        let boundingBox = center.boundingCoordinates(parseFloat(maxDistance), null, false);
         let boxSize = 0.1;
         var boundsStr = boundingBox[0]._degLat + ','
             + boundingBox[0]._degLon + ','
@@ -159,14 +166,25 @@ bot.dialog('/', [
         });
         
         var formattedAddress = 
-        session.send("Ok I will look for segments by " + getFormattedAddressFromPlace(place, ", "));
+        session.send(`Ok I will look for these types of segments: \n${activityType}\nMinimum Category:${minCategoryClimb}\nMaximum Category:${maxCategoryClimb}`);
+   
         
     }
 ]).triggerAction({
-    matches: 'Route.Find'
+    matches: 'Route.Find',
+    intentThreshold: 0.8
 });
 
-bot.dialog("/default", [
+bot.dialog("/newlocation", [
+    function (session,args) {
+        session.replaceDialog('/getlocation');
+   
+    }
+]).triggerAction({
+    matches: "Location"
+});
+
+bot.dialog("/", [
     function (session) {
          session.endDialog("I don't understand that. Can you ask again?");
     }
@@ -177,7 +195,7 @@ bot.dialog("/default", [
 bot.dialog("/getlocation", [
     function (session) {
         var options = {
-            prompt: "Where would you like to look for a run or a ride?",
+            prompt: "I need to know where you are first.",
             useNativeControl: true,
             reverseGeocode: true,
 			skipFavorites: false,
@@ -194,9 +212,9 @@ bot.dialog("/getlocation", [
     },
     function (session, results) {
         if (results.response) {
-            session.conversationData.place = results.response;
+            session.userData.place = results.response;
         }
-        session.endDialog();
+        session.endDialogWithResult(results.response);
     }
 ]);
 
@@ -213,7 +231,7 @@ function handleSuccessResponse(session, payload) {
         console.log(payload);
         //session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
         //session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
-       var place = session.conversationData.place;
+       var place = session.userData.place;
         var startpoint = [place.geo.latitude,place.geo.longitude];
         var cards = [];
 

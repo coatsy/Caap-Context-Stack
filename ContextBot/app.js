@@ -39,7 +39,6 @@ var botStorage = new azure.AzureBotStorage({
     gzipData: false
 }, docDbClient);
 
-
 // Setup bot with default dialog
 var bot = new builder.UniversalBot(connector, function (session) {
 
@@ -63,6 +62,18 @@ var bot = new builder.UniversalBot(connector, function (session) {
     session.beginDialog('stravaQuery');
 }).set('storage', botStorage);
 
+var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL);
+bot.recognizer(recognizer);
+var place;
+
+// bot.dialog('findRoute', function (session, args, next) {
+//     session.send('I see you\'re looking for a route (%s)', args.intent.score);
+//     session.endDialog();
+// }).triggerAction({
+//     matches: 'Route.Find',
+//     intentThreshold: 0.9
+// });
+
 bot.dialog('stravaQuery', function (session) {
     // get the current context stack
     var contextState = session.privateConversationData[contextStateKey] || {
@@ -72,7 +83,7 @@ bot.dialog('stravaQuery', function (session) {
     var queryString = session.message.text.trim();
 
     // send the query off to the query analysis engine
-    var queryResponse = executeQuery(queryString, contextState);
+    var queryResponse = executeQuery(queryString, contextState, session);
 
     // update the context state
     contextState.contextStack.push(queryResponse.contextState);
@@ -82,8 +93,17 @@ bot.dialog('stravaQuery', function (session) {
 
     // Write the response back to the user 
 
-    session.send(queryResponse.fullResponse.responseText);
-
+    switch (queryResponse.fullResponse.responseType) {
+        case "plainText":
+            session.send(queryResponse.fullResponse.response);
+            break;
+        case "card":
+            var msg = new builder.Message(session);
+            msg.attachmentLayout(builder.AttachmentLayout.carousel);
+            msg.attachments(queryResponse.fullResponse.response)
+            session.send(msg);
+            break;
+    };
     session.endDialog();
 });
 
@@ -162,27 +182,136 @@ bot.dialog('location', [
     }
 ]);
 
-function executeQuery(query, context){
+function executeQuery(query, context, session) {
     // query analysis happens here - LUIS or whatever else
 
     // based on query analysis, actually run the query
 
     // return the query response and a context state object that summarises the response
-    var newContextState = {
+    var newContextState, fullResponse;
+
+
+    if (query == 'how many friends have run this segment') {
+        newContextState = {
             "queryTime": moment().utc().toISOString(),
-            "queryString" : query,
-            "responseType" : "scalar",
-            "entityType" : "count",
-            "responseData" : 4
+            "queryString": query,
+            "responseType": "scalar",
+            "entityType": "count",
+            "responseData": 4
         };
-    
-    var fullResponse = {
-        "responseText" : "There are four of your friends with times on this segment"
-    };
+
+        fullResponse = {
+            "responseType": "plainText",
+            "response": "There are four of your friends with times on this segment"
+        };
+
+    } else if (query == 'who are they') {
+        var userTimes = [{
+                "person": "fdf13948-37ab-43f6-b336-27cddb00dc5c",
+                "time": "08:14.6"
+            },
+            {
+                "person": "c4524afb-9576-4885-9c54-b4e64eb4f98c",
+                "time": "08:18.0"
+            },
+            {
+                "person": "9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd",
+                "time": "08:32.3"
+            },
+            {
+                "person": "1f2f002c-ea40-402f-abbc-a21cea5d89e4",
+                "time": "09:17.5"
+            }
+        ];
+        newContextState = {
+            "queryTime": moment().utc().toISOString(),
+            "queryString": query,
+            "responseType": "vector",
+            "entityType": "composite",
+            "compositeComponentEntityTypes": ["person", "time"],
+            "responseData": {
+                "segment": "c94984b9-0261-4cdc-9e95-7b1bf7482ab0",
+                "userTimes": userTimes
+            }
+        };
+
+        fullResponse = {
+            "responseType": "card",
+            "response": CreateThumbnailCards(session, userTimes)
+        };
+    } else {
+        newContextState = {
+            "queryTime": moment().utc().toISOString(),
+            "queryString": query,
+            "responseType": "informational",
+            "entityType": "text",
+            "responseData": "query not undertood"
+        };
+
+        fullResponse = {
+            "responseType": "plainText",
+            "response": "Sorry, I don't understand - you can ask\n\'how many friends have run this segment\' or\n\'who are they\'"
+        };
+    }
 
     return {
-        "fullResponse" : fullResponse,
-        "contextState" : newContextState
+        "fullResponse": fullResponse,
+        "contextState": newContextState
     };
 
 };
+
+function CreateThumbnailCards(session, userTimes) {
+
+    var cards = [];
+
+    userTimes.forEach(function (element) {
+        cards.push(CreateThumbnailCard(session, element));
+    }, this);
+
+    return cards;
+}
+
+function CreateThumbnailCard(session, details) {
+
+    return new builder.HeroCard(session)
+        .title(GetUsername(details.person))
+        .subtitle(details.time)
+        .text(GetUserMotto(details.person))
+        .images([
+            builder.CardImage.create(session, 'https://botstatetest.blob.core.windows.net/images/' + details.person + '.png')
+        ])
+        .buttons([]);
+}
+
+function GetUsername(personId) {
+    // look up the person in the datbase or whatever
+    switch (personId) {
+        case "fdf13948-37ab-43f6-b336-27cddb00dc5c":
+            return "Jimmy McKewen";
+        case "c4524afb-9576-4885-9c54-b4e64eb4f98c":
+            return "Sandy Vincentia";
+        case "9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd":
+            return "Anita Johannsen";
+        case "1f2f002c-ea40-402f-abbc-a21cea5d89e4":
+            return "Margaret Harris";
+        default:
+            return "Unknown User";
+    };
+}
+
+function GetUserMotto(personId) {
+    // look up the person in the datbase or whatever
+    switch (personId) {
+        case "fdf13948-37ab-43f6-b336-27cddb00dc5c":
+            return "Run Forrest, Run!";
+        case "c4524afb-9576-4885-9c54-b4e64eb4f98c":
+            return "Chasing my dreams ...";
+        case "9f96c9fc-c700-41c4-b0c2-8a2a567c5fcd":
+            return "Just one more hill";
+        case "1f2f002c-ea40-402f-abbc-a21cea5d89e4":
+            return "I love a sunburnt country";
+        default:
+            return "Insert motivational message here...";
+    };
+}

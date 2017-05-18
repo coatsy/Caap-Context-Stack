@@ -1,0 +1,271 @@
+{
+  "luis_schema_version": "2.1.0",
+  "versionId": "0.1",
+  "name": "StravaBot",
+  "desc": "",
+  "culture": "en-us",
+  "intents": [
+    {
+      "name": "Location"
+    },
+    {
+      "name": "None"
+    },
+    {
+      "name": "Route.Find"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Distance",
+      "children": [
+        "MaxDistance",
+        "MinDistance"
+      ]
+    }
+  ],
+  "composites": [],
+  "closedLists": [
+    {
+      "name": "ActivityCategory",
+      "subLists": [
+        {
+          "canonicalForm": "hilly",
+          "list": [
+            "hilly",
+            "hills",
+            "lots of hills",
+            "hard"
+          ]
+        },
+        {
+          "canonicalForm": "flat",
+          "list": [
+            "flat",
+            "easy",
+            "no hills"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ActvityType",
+      "subLists": [
+        {
+          "canonicalForm": "Run",
+          "list": [
+            "run"
+          ]
+        },
+        {
+          "canonicalForm": "Ride",
+          "list": [
+            "ride",
+            "bike",
+            "bicycle ride",
+            "bike ride",
+            "cycle"
+          ]
+        }
+      ]
+    }
+  ],
+  "bing_entities": [
+    "dimension",
+    "number",
+    "ordinal"
+  ],
+  "actions": [],
+  "model_features": [],
+  "regex_features": [],
+  "utterances": [
+    {
+      "text": "find a route",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "get a route",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find route",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find me a route",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "i'm looking for a 20 km run",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 18,
+          "endPos": 22
+        }
+      ]
+    },
+    {
+      "text": "find me a 50 mile cycle",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 10,
+          "endPos": 16
+        }
+      ]
+    },
+    {
+      "text": "i want a 5km run",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 9,
+          "endPos": 11
+        }
+      ]
+    },
+    {
+      "text": "i want to run 5kms of hills",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 14,
+          "endPos": 17
+        }
+      ]
+    },
+    {
+      "text": "find me a flat route",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "search for a hilly run",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "get me a 100 km bike ride with lots of hills",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 9,
+          "endPos": 14
+        }
+      ]
+    },
+    {
+      "text": "search for a run or a ride between 10 kms and 20 kms with some hills",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 35,
+          "endPos": 40
+        },
+        {
+          "entity": "Distance::MaxDistance",
+          "startPos": 46,
+          "endPos": 51
+        }
+      ]
+    },
+    {
+      "text": "find run between 5 miles and 10 miles",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a flat run",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a flat ride",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a 25 mile flat ride",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 7,
+          "endPos": 13
+        }
+      ]
+    },
+    {
+      "text": "find a hilly run",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a 10 mile run",
+      "intent": "Route.Find",
+      "entities": [
+        {
+          "entity": "Distance::MinDistance",
+          "startPos": 7,
+          "endPos": 13
+        }
+      ]
+    },
+    {
+      "text": "find a hilly run less than 50 miles",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a hilly run under 50 miles",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a 5 mile run",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a hilly ride",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a 2 mile run",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "find a hilly run less than 4 miles",
+      "intent": "Route.Find",
+      "entities": []
+    },
+    {
+      "text": "change my location",
+      "intent": "Location",
+      "entities": []
+    },
+    {
+      "text": "search new location",
+      "intent": "Location",
+      "entities": []
+    },
+    {
+      "text": "change location",
+      "intent": "Location",
+      "entities": []
+    }
+  ]
+}

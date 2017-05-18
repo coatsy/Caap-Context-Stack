@@ -9,6 +9,12 @@ var bingAPI = require('./Common/bingAPI.js');
 var polyline = require( 'google-polyline' );
 var cardlib = require('microsoft-adaptivecards');
 var adaptivecard = require('./Common/adaptivecards.js');
+var GeoPoint = require('geopoint');
+
+
+
+var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL);
+//var intents = new builder.IntentDialog({ recognizers: [recognizer]});
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -28,6 +34,7 @@ var connector = new builder.ChatConnector({
 });
 
 var bot = new builder.UniversalBot(connector);
+bot.recognizer(recognizer);
 var place;
 
 // Listen for messages from users 
@@ -35,45 +42,179 @@ server.post('/api/messages', connector.listen());
 
 bot.library(locationDialog.createLibrary(process.env.BING_MAPS_API_KEY));
 
+bot.dialog('/findroute', [
+    function (session, args, next) {
+        var minDistance, minDistance, maxDistance, activityType, activityCategory, difficulty, distance;
+        minDistance = builder.EntityRecognizer.findEntity(args.intent.entities, 'Distance.MinDistance'); // min max
+        maxDistance = builder.EntityRecognizer.findEntity(args.intent.entities, 'Distance.MaxDistance'); // min max
+        distance = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.dimension'); // min max
+        activityType = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActvityType'); // Run or Bike
+        difficulty = builder.EntityRecognizer.findEntity(args.intent.entities, 'ActivityCategory'); // Hills or Flat
+        //difficulty = builder.EntityRecognizer.findEntity(args.intent.entities, 'Difficulty');
+        var unit = null;
+        if (minDistance == undefined | !minDistance) {
+            minDistance = 0 // KM
+        } else {
+            minDistance = minDistance.entity;
+        }
+        if (maxDistance == undefined | !maxDistance) {
+            if (distance == undefined | !distance) {
+                maxDistance = 10 // KM
+            } else {
+                maxDistance = distance.resolution.value;
+                unit = distance.resolution.unit;
+            }
+        } else {
+            maxDistance = maxDistance.entity;
+        }
+        if (activityType == undefined | !activityType) 
+            {
+                activityType = 'running';
+            } else {
+                switch (activityType.entity) {
+                    case 'run':
+                        activityType = 'running';
+                        break;
+                    case 'ride':
+                        activityType = 'riding';
+                        break;
+                    default:
+                        activityType = 'running';
+                }
+               
+            }
+         if (difficulty == undefined | !difficulty) 
+            {
+                difficulty = 'flat';
+            } else {
+                difficulty = difficulty.entity;
+            }
+
+
+
+        // Calc difficulty
+        var minCategoryClimb, maxCategoryClimb;
+      
+             switch (difficulty) {
+                case 'flat':
+                    minCategoryClimb = '1';
+                    maxCategoryClimb = '2';
+                    break;
+                case 'hilly':
+                    minCategoryClimb = '3';
+                    maxCategoryClimb = '5';
+                    break;
+                default:
+                    minCategoryClimb = '1';
+                    maxCategoryClimb = '5';
+                }
+          
+         
+
+       var query = session.dialogData.query = {
+            'minDistance': minDistance,
+            'maxDistance': maxDistance,
+            'activityType': activityType,
+            'activityCategory': activityCategory,
+            'difficulty': difficulty,
+            'minCategoryClimb': minCategoryClimb,
+            'maxCategoryClimb': maxCategoryClimb,
+            'unit': unit
+        }
+         session.send(`Just a sec. I'll look for a ${activityType} based on your critieria`);
+
+            var place = session.userData.place;
+        if (!place) 
+        {
+            session.beginDialog('/getlocation');
+        } else
+        {
+            next();
+        }
+    },
+    function (session, results) {
+        var place = session.userData.place;
+        if (!place) {
+             place = results.response;
+             session.userData.place = place;
+        };
+        let activityType = session.dialogData.query.activityType;
+        let maxDistance = session.dialogData.query.maxDistance;
+        let minCategoryClimb = session.dialogData.query.minCategoryClimb;
+        let maxCategoryClimb = session.dialogData.query.maxCategoryClimb;
+                // Calc bounding box
+        let center = new GeoPoint(parseFloat(place.geo.latitude), parseFloat(place.geo.longitude), false);
+        let boundingBox = center.boundingCoordinates(parseFloat(maxDistance), null, false);
+        let boxSize = 0.1;
+        var boundsStr = boundingBox[0]._degLat + ','
+            + boundingBox[0]._degLon + ','
+            + boundingBox[1]._degLat + ','
+            + boundingBox[1]._degLon;
+        
+
+        //var boundsStr = (parseFloat(place.geo.latitude)-boxSize)+','+(parseFloat(place.geo.longitude)-boxSize)+','+(parseFloat(place.geo.latitude)+boxSize)+','+(parseFloat(place.geo.longitude)+boxSize);
+        strava.segments.explore({'bounds':boundsStr, 'activity_type':activityType, 'min_cat':minCategoryClimb, 'max_cat':maxCategoryClimb},function(err,payload,limits) {
+            if(!err) {
+                console.log(payload);
+                handleSuccessResponse(session, payload);
+                session.endDialog();
+            }
+            else {
+                handleErrorResponse(session, err);
+                session.endDialog();
+            }
+        });
+        
+        var formattedAddress = 
+        session.send(`Ok I will look for these types of segments: \n${activityType}\nMinimum Category:${minCategoryClimb}\nMaximum Category:${maxCategoryClimb}`);
+   
+        
+    }
+]).triggerAction({
+    matches: 'Route.Find',
+    intentThreshold: 0.8
+});
+
+bot.dialog("/newlocation", [
+    function (session,args) {
+        session.replaceDialog('/getlocation');
+   
+    }
+]).triggerAction({
+    matches: "Location"
+});
+
 bot.dialog("/", [
     function (session) {
+         session.endDialog("I don't understand that. Can you ask again?");
+    }
+]).triggerAction({
+    matches: 'None'
+});
+
+bot.dialog("/getlocation", [
+    function (session) {
         var options = {
-            prompt: "Where would you like to look for a run or a ride?",
+            prompt: "I need to know where you are first.",
             useNativeControl: true,
             reverseGeocode: true,
 			skipFavorites: false,
-			skipConfirmationAsk: true,
-            requiredFields:
-                locationDialog.LocationRequiredFields.streetAddress |
-                locationDialog.LocationRequiredFields.locality |
-                locationDialog.LocationRequiredFields.region |
-                locationDialog.LocationRequiredFields.postalCode |
-                locationDialog.LocationRequiredFields.country
+			skipConfirmationAsk: true
+            // requiredFields:
+            //     locationDialog.LocationRequiredFields.streetAddress |
+            //     locationDialog.LocationRequiredFields.locality |
+            //     locationDialog.LocationRequiredFields.region |
+            //     locationDialog.LocationRequiredFields.postalCode |
+            //     locationDialog.LocationRequiredFields.country
         };
 
         locationDialog.getLocation(session, options);
     },
     function (session, results) {
         if (results.response) {
-            place = results.response;
-            var boxSize = 0.1;
-            var activityType = 'running';  //‘running’ or ‘riding’, default is riding
-            var minCategoryClimb = '1'; // segment hills are rated from 0 to 5 depending on how steep they are
-            var maxCategoryClimb = '5';
-            var boundsStr = (parseFloat(place.geo.latitude)-boxSize)+','+(parseFloat(place.geo.longitude)-boxSize)+','+(parseFloat(place.geo.latitude)+boxSize)+','+(parseFloat(place.geo.longitude)+boxSize);
-            strava.segments.explore({'bounds':boundsStr, 'activity_type':activityType, 'min_cat':minCategoryClimb, 'max_cat':maxCategoryClimb},function(err,payload,limits) {
-                if(!err) {
-                    console.log(payload);
-                    handleSuccessResponse(session, payload);
-                }
-                else {
-                    handleErrorResponse(session, err);
-                }
-            });
-            
-			var formattedAddress = 
-            session.send("Ok I will look for segments by " + getFormattedAddressFromPlace(place, ", "));
+            session.userData.place = results.response;
         }
+        session.endDialogWithResult(results.response);
     }
 ]);
 
@@ -90,7 +231,7 @@ function handleSuccessResponse(session, payload) {
         console.log(payload);
         //session.send('you are at '+place.geo.latitude+','+place.geo.longitude);
         //session.send(payload.segments[0].name+' start location: '+payload.segments[0].start_latlng[0]+','+payload.segments[0].start_latlng[1]);
-       
+       var place = session.userData.place;
         var startpoint = [place.geo.latitude,place.geo.longitude];
         var cards = [];
 
@@ -102,7 +243,11 @@ function handleSuccessResponse(session, payload) {
             var points = polyline.decode(payload.segments[i].points);
             var waypoints = [];
             waypoints.push(payload.segments[i].start_latlng);
-            for (var j=0; j < points.length; j += 10) {
+
+            var step = Math.floor(points.length / 10); 
+         
+            
+            for (var j=0; j < points.length; j += step) {
                 waypoints.push(points[j]);
             }
             
@@ -128,6 +273,7 @@ function handleSuccessResponse(session, payload) {
     else {
         session.send('Couldn\'t find any segments near here');
     }
+    
 
 }
 

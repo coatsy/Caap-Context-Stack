@@ -7,7 +7,9 @@
     "botbuilder": "^3.8.2",
     "botbuilder-location": "^2.0.0",
     "dotenv-extended": "^2.0.0",
+    "geopoint": "^1.0.1",
     "google-polyline": "^1.0.0",
+    "microsoft-adaptivecards": "^0.5.6",
     "restify": "^4.3.0",
     "strava-v3": "^1.14.0"
   },

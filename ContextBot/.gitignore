@@ -1,0 +1,2 @@
+# Local copies of settings, not to be pushed into source control
+.env
